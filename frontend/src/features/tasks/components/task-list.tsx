@@ -6,13 +6,17 @@ import { TaskRow } from './task-row';
 import { TaskDetailPanel } from './task-detail-panel';
 import { WorkspaceMember } from '@/features/workspaces/services/workspace-service';
 
+import { useTaskRealtime } from '../hooks/use-task-realtime';
+
 interface TaskListProps {
   tasks: Task[];
   members: WorkspaceMember[];
+  projectId: string;
 }
 
-export function TaskList({ tasks, members }: TaskListProps) {
+export function TaskList({ tasks: initialTasks, members, projectId }: TaskListProps) {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const tasks = useTaskRealtime(projectId, initialTasks);
 
   if (tasks.length === 0) {
     return (

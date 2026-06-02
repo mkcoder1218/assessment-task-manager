@@ -114,7 +114,7 @@ async function TaskDataWrapper({
     );
   }
 
-  return <TaskList tasks={tasks} members={members} />;
+  return <TaskList tasks={tasks} members={members} projectId={projectId} />;
 }
 
 function TaskListSkeleton() {
