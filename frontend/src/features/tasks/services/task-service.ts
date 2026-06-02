@@ -4,16 +4,25 @@ import { Database } from '@/lib/supabase/database.types';
 export type Task = Database['public']['Tables']['tasks']['Row'];
 
 /**
- * Fetches all tasks for a given project.
+ * Fetches all tasks for a given project, with optional filtering.
  * Relies on RLS for security.
  */
-export async function getTasks(projectId: string) {
+export async function getTasks(projectId: string, filters?: { status?: string; assigneeId?: string }) {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from('tasks')
     .select('*')
-    .eq('project_id', projectId)
-    .order('created_at', { ascending: false });
+    .eq('project_id', projectId);
+
+  if (filters?.status && filters.status !== 'all') {
+    query = query.eq('status', filters.status as Database['public']['Enums']['task_status']);
+  }
+
+  if (filters?.assigneeId && filters.assigneeId !== 'all') {
+    query = query.eq('assignee_id', filters.assigneeId);
+  }
+
+  const { data, error } = await query.order('created_at', { ascending: false });
 
   if (error) {
     console.error('Error fetching tasks:', error);

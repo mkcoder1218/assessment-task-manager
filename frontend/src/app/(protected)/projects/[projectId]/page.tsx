@@ -3,16 +3,20 @@ import Link from 'next/link';
 import { redirect, notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getProjectById } from '@/features/projects/services/project-service';
-import { getWorkspaces } from '@/features/workspaces/services/workspace-service';
+import { getWorkspaces, getAllWorkspaceMembers } from '@/features/workspaces/services/workspace-service';
 import { getTasks } from '@/features/tasks/services/task-service';
 import { TaskList } from '@/features/tasks/components/task-list';
+import { TaskFilters } from '@/features/tasks/components/task-filters';
 
 interface ProjectPageProps {
   params: Promise<{ projectId: string }>;
+  searchParams: Promise<{ status?: string; assignee?: string }>;
 }
 
-export default async function ProjectPage({ params }: ProjectPageProps) {
+export default async function ProjectPage({ params, searchParams }: ProjectPageProps) {
   const { projectId } = await params;
+  const { status, assignee } = await searchParams;
+  
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -20,17 +24,17 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     redirect('/sign-in');
   }
 
-  // Fetch project details and tasks
-  // Note: getProjectById handles RLS (will return null if unauthorized)
   const project = await getProjectById(projectId);
 
   if (!project) {
     return notFound();
   }
 
-  // Fetch workspace details for context (optional but good for title)
   const workspaces = await getWorkspaces();
   const currentWorkspace = workspaces.find(ws => ws.id === project.workspace_id);
+  
+  // Fetch members for the filter dropdown
+  const members = await getAllWorkspaceMembers(project.workspace_id);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -58,17 +62,23 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">
-            <span>{currentWorkspace?.name || 'Workspace'}</span>
-            <span>/</span>
-            <span className="text-blue-600">Tasks</span>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-6">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">
+                <span>{currentWorkspace?.name || 'Workspace'}</span>
+                <span>/</span>
+                <span className="text-blue-600">Tasks</span>
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900">Task Overview</h2>
+            </div>
           </div>
-          <h2 className="text-2xl font-bold text-slate-900">Task Overview</h2>
+
+          <TaskFilters members={members} />
         </div>
 
         <div className="space-y-6">
-          <Suspense fallback={<TaskListSkeleton />}>
-            <TaskDataWrapper projectId={projectId} />
+          <Suspense key={`${status}-${assignee}`} fallback={<TaskListSkeleton />}>
+            <TaskDataWrapper projectId={projectId} status={status} assignee={assignee} />
           </Suspense>
         </div>
       </main>
@@ -76,8 +86,19 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   );
 }
 
-async function TaskDataWrapper({ projectId }: { projectId: string }) {
-  const tasks = await getTasks(projectId).catch((err) => {
+async function TaskDataWrapper({ 
+  projectId, 
+  status, 
+  assignee 
+}: { 
+  projectId: string; 
+  status?: string; 
+  assignee?: string 
+}) {
+  const tasks = await getTasks(projectId, { 
+    status, 
+    assigneeId: assignee 
+  }).catch((err) => {
     console.error('Task loading error:', err);
     return null;
   });

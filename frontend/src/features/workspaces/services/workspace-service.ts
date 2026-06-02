@@ -46,3 +46,20 @@ export async function getWorkspaceMembership(workspaceId: string) {
 
   return data as WorkspaceMember | null;
 }
+/**
+ * Fetches all members for a specific workspace.
+ */
+export async function getAllWorkspaceMembers(workspaceId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('workspace_members')
+    .select('*')
+    .eq('workspace_id', workspaceId);
+
+  if (error) {
+    console.error('Error fetching workspace members:', error);
+    throw new Error('Failed to fetch workspace members');
+  }
+
+  return data as WorkspaceMember[];
+}
