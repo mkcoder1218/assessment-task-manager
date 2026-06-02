@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { redirect, notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getProjectById } from '@/features/projects/services/project-service';
-import { getWorkspaces, getAllWorkspaceMembers } from '@/features/workspaces/services/workspace-service';
+import { getWorkspaces, getAllWorkspaceMembers, WorkspaceMember } from '@/features/workspaces/services/workspace-service';
 import { getTasks } from '@/features/tasks/services/task-service';
 import { TaskList } from '@/features/tasks/components/task-list';
 import { TaskFilters } from '@/features/tasks/components/task-filters';
@@ -78,7 +78,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
 
         <div className="space-y-6">
           <Suspense key={`${status}-${assignee}`} fallback={<TaskListSkeleton />}>
-            <TaskDataWrapper projectId={projectId} status={status} assignee={assignee} />
+            <TaskDataWrapper projectId={projectId} status={status} assignee={assignee} members={members} />
           </Suspense>
         </div>
       </main>
@@ -89,11 +89,13 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
 async function TaskDataWrapper({ 
   projectId, 
   status, 
-  assignee 
+  assignee,
+  members
 }: { 
   projectId: string; 
   status?: string; 
-  assignee?: string 
+  assignee?: string;
+  members: WorkspaceMember[];
 }) {
   const tasks = await getTasks(projectId, { 
     status, 
@@ -112,7 +114,7 @@ async function TaskDataWrapper({
     );
   }
 
-  return <TaskList tasks={tasks} />;
+  return <TaskList tasks={tasks} members={members} />;
 }
 
 function TaskListSkeleton() {

@@ -1,11 +1,19 @@
+'use client';
+
+import { useState } from 'react';
 import { Task } from '../services/task-service';
 import { TaskRow } from './task-row';
+import { TaskDetailPanel } from './task-detail-panel';
+import { WorkspaceMember } from '@/features/workspaces/services/workspace-service';
 
 interface TaskListProps {
   tasks: Task[];
+  members: WorkspaceMember[];
 }
 
-export function TaskList({ tasks }: TaskListProps) {
+export function TaskList({ tasks, members }: TaskListProps) {
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+
   if (tasks.length === 0) {
     return (
       <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-slate-200">
@@ -18,11 +26,27 @@ export function TaskList({ tasks }: TaskListProps) {
     );
   }
 
+  const selectedTask = tasks.find(t => t.id === selectedTaskId) || null;
+
   return (
-    <div className="space-y-3">
-      {tasks.map((task) => (
-        <TaskRow key={task.id} task={task} />
-      ))}
-    </div>
+    <>
+      <div className="space-y-3">
+        {tasks.map((task) => (
+          <div 
+            key={task.id} 
+            onClick={() => setSelectedTaskId(task.id)}
+            className="cursor-pointer"
+          >
+            <TaskRow task={task} />
+          </div>
+        ))}
+      </div>
+
+      <TaskDetailPanel 
+        task={selectedTask} 
+        members={members} 
+        onClose={() => setSelectedTaskId(null)} 
+      />
+    </>
   );
 }
