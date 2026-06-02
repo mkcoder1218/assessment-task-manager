@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { redirect, notFound } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { getProjectById } from '@/features/projects/services/project-service';
+import { getProjectById, getProjectTaskCounts } from '@/features/projects/services/project-service';
 import { getWorkspaces, getAllWorkspaceMembers, WorkspaceMember } from '@/features/workspaces/services/workspace-service';
 import { getTasks } from '@/features/tasks/services/task-service';
 import { TaskList } from '@/features/tasks/components/task-list';
@@ -21,9 +21,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect('/sign-in');
-  }
+  if (!user) return null;
 
   const project = await getProjectById(projectId);
 
@@ -35,7 +33,10 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
   const currentWorkspace = workspaces.find(ws => ws.id === project.workspace_id);
   
   // Fetch members for the filter dropdown
-  const members = await getAllWorkspaceMembers(project.workspace_id);
+  const [members, taskCounts] = await Promise.all([
+    getAllWorkspaceMembers(project.workspace_id),
+    getProjectTaskCounts(projectId)
+  ]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -79,7 +80,20 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
                 <span className="text-brand-primary font-black px-2 py-0.5 rounded-md bg-brand-primary/5">Project Tasks</span>
               </div>
               <h2 className="text-4xl font-black text-text-main tracking-tight">Focus on what matters</h2>
-              <p className="text-text-dim font-medium max-w-xl">Manage and track all tasks for <span className="text-text-main font-bold">&quot;{project.name}&quot;</span>. Filter by status or assignee to stay organized.</p>
+              <div className="flex flex-wrap items-center gap-6 pt-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-text-dim/40 rounded-full"></span>
+                  <span className="text-xs font-bold text-text-dim uppercase tracking-widest">{taskCounts.todo} TODO</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                  <span className="text-xs font-bold text-text-dim uppercase tracking-widest">{taskCounts.inProgress} DOING</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  <span className="text-xs font-bold text-text-dim uppercase tracking-widest">{taskCounts.done} DONE</span>
+                </div>
+              </div>
             </div>
             <div className="flex items-center shrink-0">
               <OverdueTaskPanel projectId={projectId} />

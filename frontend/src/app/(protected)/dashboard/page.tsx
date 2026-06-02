@@ -16,9 +16,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect('/sign-in');
-  }
+  if (!user) return null; // Should be handled by layout, but avoids TS errors
 
   const { workspaceId } = await searchParams;
   const workspaces = await getWorkspaces();

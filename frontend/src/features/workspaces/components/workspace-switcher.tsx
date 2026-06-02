@@ -20,7 +20,9 @@ export function WorkspaceSwitcher({ workspaces, currentWorkspaceId }: WorkspaceS
 
   return (
     <div className="relative inline-block text-left w-full sm:w-80 group">
-      <label htmlFor="workspace-select" className="sr-only">Switch Workspace</label>
+      <label htmlFor="workspace-select" className="block text-[10px] font-black text-text-dim uppercase tracking-[0.2em] mb-2 px-1">
+        Your Organization
+      </label>
       <div className="relative">
         <select
           id="workspace-select"
