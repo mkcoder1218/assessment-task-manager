@@ -1,5 +1,5 @@
 import { Task } from '../services/task-service';
-import { TaskStatusBadge } from './task-status-badge';
+import { TaskStatusSelect } from './task-status-select';
 
 interface TaskRowProps {
   task: Task;
@@ -16,7 +16,7 @@ export function TaskRow({ task }: TaskRowProps) {
           <h4 className="text-base font-bold text-slate-900 truncate">
             {task.title}
           </h4>
-          <TaskStatusBadge status={task.status} />
+          <TaskStatusSelect taskId={task.id} currentStatus={task.status} />
         </div>
         {task.description && (
           <p className="text-sm text-slate-500 truncate max-w-xl">
