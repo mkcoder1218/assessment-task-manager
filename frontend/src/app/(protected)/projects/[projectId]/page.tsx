@@ -7,6 +7,7 @@ import { getWorkspaces, getAllWorkspaceMembers, WorkspaceMember } from '@/featur
 import { getTasks } from '@/features/tasks/services/task-service';
 import { TaskList } from '@/features/tasks/components/task-list';
 import { TaskFilters } from '@/features/tasks/components/task-filters';
+import { OverdueTaskPanel } from '@/features/tasks/components/overdue-task-panel';
 
 interface ProjectPageProps {
   params: Promise<{ projectId: string }>;
@@ -70,6 +71,9 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
                 <span className="text-blue-600">Tasks</span>
               </div>
               <h2 className="text-2xl font-bold text-slate-900">Task Overview</h2>
+            </div>
+            <div className="flex items-center gap-3">
+              <OverdueTaskPanel projectId={projectId} />
             </div>
           </div>
 
