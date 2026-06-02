@@ -1,10 +1,18 @@
+import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { LogoutButton } from '@/features/auth/components/logout-button';
-import { getWorkspaces, Workspace } from '@/features/workspaces/services/workspace-service';
-import { getProjects, getProjectTaskCounts, Project } from '@/features/projects/services/project-service';
+import { getWorkspaces, getWorkspaceMembership } from '@/features/workspaces/services/workspace-service';
+import { getProjects } from '@/features/projects/services/project-service';
+import { WorkspaceSwitcher } from '@/features/workspaces/components/workspace-switcher';
+import { ProjectList } from '@/features/projects/components/project-list';
+import { DashboardSkeleton } from '@/features/workspaces/components/dashboard-skeleton';
 
-export default async function DashboardPage() {
+interface DashboardPageProps {
+  searchParams: Promise<{ workspaceId?: string }>;
+}
+
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -12,101 +20,92 @@ export default async function DashboardPage() {
     redirect('/sign-in');
   }
 
-  // Load core data (Phase 2.3 Verification)
-  const workspaces: Workspace[] = await getWorkspaces();
-  const firstWorkspace: Workspace | undefined = workspaces[0];
+  const { workspaceId } = await searchParams;
+  const workspaces = await getWorkspaces();
   
-  let projects: Project[] = [];
-  let taskSummary: { todo: number; inProgress: number; done: number; total: number } | null = null;
+  // If no workspaceId in URL, default to the first one available
+  const currentWorkspaceId = workspaceId || workspaces[0]?.id;
+  const currentWorkspace = workspaces.find(ws => ws.id === currentWorkspaceId);
 
-  if (firstWorkspace) {
-    projects = await getProjects(firstWorkspace.id);
-    if (projects[0]) {
-      taskSummary = await getProjectTaskCounts(projects[0].id);
-    }
-  }
+  // Fetch membership role for the current workspace
+  const membership = currentWorkspaceId ? await getWorkspaceMembership(currentWorkspaceId) : null;
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <nav className="bg-white border-b border-slate-200">
+      <nav className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <h1 className="text-xl font-bold text-slate-900">Task Manager</h1>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-slate-600 hidden sm:inline">{user.email}</span>
+            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Task Manager</h1>
+            <div className="flex items-center space-x-6">
+              <span className="text-sm font-medium text-slate-500 hidden sm:inline">{user.email}</span>
               <LogoutButton />
             </div>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="space-y-8">
-          <section>
-            <h2 className="text-lg font-medium text-slate-900 mb-4">Verification: Authenticated User</h2>
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <p className="text-slate-600 truncate">ID: <code className="bg-slate-100 px-1 rounded">{user.id}</code></p>
-              <p className="text-slate-600">Email: {user.email}</p>
+      <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-1">
+            <h2 className="text-sm font-bold text-blue-600 uppercase tracking-widest">Active Workspace</h2>
+            <div className="flex items-center gap-3">
+              <WorkspaceSwitcher workspaces={workspaces} currentWorkspaceId={currentWorkspaceId} />
+              {membership && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                  {membership.role}
+                </span>
+              )}
             </div>
-          </section>
+          </div>
+          
+          <div className="bg-slate-100 px-4 py-2 rounded-lg border border-slate-200 hidden lg:block">
+            <p className="text-xs text-slate-500 font-medium">
+              You are viewing the dashboard as <span className="text-slate-900">{user.email}</span>
+            </p>
+          </div>
+        </div>
 
-          <section>
-            <h2 className="text-lg font-medium text-slate-900 mb-4">Verification: Your Workspaces ({workspaces.length})</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {workspaces.map((ws) => (
-                <div key={ws.id} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                  <h3 className="font-bold text-slate-900">{ws.name}</h3>
-                  <p className="text-xs text-slate-400 mt-1 uppercase tracking-wider">{ws.id}</p>
-                </div>
-              ))}
-              {workspaces.length === 0 && <p className="text-slate-500 italic">No workspaces found.</p>}
-            </div>
-          </section>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-2xl font-bold text-slate-900">Projects</h3>
+            <span className="text-sm text-slate-500">{currentWorkspace?.name || 'Loading...'}</span>
+          </div>
 
-          {firstWorkspace && (
-            <section>
-              <h2 className="text-lg font-medium text-slate-900 mb-4">
-                Verification: Interior Projects in <span className="text-blue-600">&quot;{firstWorkspace.name}&quot;</span>
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {projects.map((p) => (
-                  <div key={p.id} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-blue-500">
-                    <h3 className="font-bold text-slate-900">{p.name}</h3>
-                    <p className="text-xs text-slate-400 mt-1 uppercase tracking-wider">{p.id}</p>
-                  </div>
-                ))}
-                {projects.length === 0 && <p className="text-slate-500 italic">No projects found in this workspace.</p>}
+          <Suspense fallback={<DashboardSkeleton />}>
+            {currentWorkspaceId ? (
+              <ProjectDataWrapper workspaceId={currentWorkspaceId} />
+            ) : (
+              <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                <p className="text-slate-500">You don&apos;t have any workspaces yet.</p>
               </div>
-            </section>
-          )}
-
-          {taskSummary && projects[0] && (
-            <section>
-              <h2 className="text-lg font-medium text-slate-900 mb-4">
-                Verification: Task Counts in <span className="text-blue-600">&quot;{projects[0].name}&quot;</span>
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
-                  <span className="block text-2xl font-bold text-slate-900">{taskSummary.total}</span>
-                  <span className="text-xs text-slate-500 uppercase font-semibold">Total</span>
-                </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
-                  <span className="block text-2xl font-bold text-blue-600">{taskSummary.todo}</span>
-                  <span className="text-xs text-slate-500 uppercase font-semibold">Todo</span>
-                </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
-                  <span className="block text-2xl font-bold text-orange-500">{taskSummary.inProgress}</span>
-                  <span className="text-xs text-slate-500 uppercase font-semibold">In Progress</span>
-                </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
-                  <span className="block text-2xl font-bold text-green-600">{taskSummary.done}</span>
-                  <span className="text-xs text-slate-500 uppercase font-semibold">Done</span>
-                </div>
-              </div>
-            </section>
-          )}
+            )}
+          </Suspense>
         </div>
       </main>
+
+      <footer className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 border-t border-slate-200 mt-12">
+        <p className="text-center text-slate-400 text-xs tracking-widest uppercase">
+          Workspace Task Manager &copy; 2026
+        </p>
+      </footer>
     </div>
   );
+}
+
+async function ProjectDataWrapper({ workspaceId }: { workspaceId: string }) {
+  const projects = await getProjects(workspaceId).catch((err) => {
+    console.error('Project loading error:', err);
+    return null;
+  });
+
+  if (projects === null) {
+    return (
+      <div className="bg-red-50 p-6 rounded-xl border border-red-200 text-center">
+        <h3 className="text-red-800 font-bold mb-1">Failed to load projects</h3>
+        <p className="text-red-600 text-sm">Please refresh the page or try again later.</p>
+      </div>
+    );
+  }
+
+  return <ProjectList projects={projects} />;
 }
