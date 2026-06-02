@@ -76,3 +76,18 @@ Access is gated through the `workspace_members` table, ensuring users can only i
 - **Feature-based Structure**: Organizing code by domain (features/) rather than type (components/pages) to prevent "folder bloating".
 - **SSR-first Auth**: Using `@supabase/ssr` to prevent flashes of unauthenticated content and improve security.
 - **Schema-first Development**: Defining the source of truth in `schema.sql` before building UI.
+
+## RLS Verification Checklist
+
+To verify security isolation, perform the following manual tests using User A and User B:
+
+### Multi-Account Workspace Separation
+1. [ ] Log in as **User A**. Verify you see only **Engineering** and **Marketing**.
+2. [ ] Log in as **User B**. Verify you see only **Engineering**.
+3. [ ] Attempt to access User B's private project URL (if any) as User A. Verify a 404 or empty state is returned.
+
+### Cross-Workspace Operation Blockage
+1. [ ] **Cross-read**: Verify User B cannot see tasks belonging to the **Marketing** workspace.
+2. [ ] **Cross-insert**: Try to create a project in **Marketing** while logged in as User B. Verify the request is rejected by RLS.
+3. [ ] **Cross-update**: Try to rename a project in **Marketing** while logged in as User B. Verify the operation fails.
+4. [ ] **Cross-delete**: Try to delete a project in **Marketing** while logged in as User B. Verify the operation fails.
