@@ -31,62 +31,98 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const membership = currentWorkspaceId ? await getWorkspaceMembership(currentWorkspaceId) : null;
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+    <div className="min-h-screen bg-background">
+      <nav className="glass border-b border-border-subtle sticky top-0 z-50 shadow-sm transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Task Manager</h1>
+          <div className="flex justify-between h-18 items-center">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-brand-primary rounded-xl flex items-center justify-center shadow-md shadow-brand-primary/20">
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
+              <h1 className="text-xl font-black text-text-main tracking-tight uppercase">TaskFlow</h1>
+            </div>
+            
             <div className="flex items-center space-x-6">
-              <span className="text-sm font-medium text-slate-500 hidden sm:inline">{user.email}</span>
+              <div className="hidden sm:flex flex-col items-end">
+                <span className="text-sm font-bold text-text-main">{user.email?.split('@')[0]}</span>
+                <span className="text-[10px] uppercase tracking-widest text-text-dim font-semibold">{user.email}</span>
+              </div>
               <LogoutButton />
             </div>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-1">
-            <h2 className="text-sm font-bold text-blue-600 uppercase tracking-widest">Active Workspace</h2>
-            <div className="flex items-center gap-3">
+      <main className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8 animate-fade-in">
+        <header className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-primary/10 text-brand-primary text-[10px] font-bold uppercase tracking-wider">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-primary"></span>
+              </span>
+              Current Workspace
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-4">
               <WorkspaceSwitcher workspaces={workspaces} currentWorkspaceId={currentWorkspaceId} />
               {membership && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                  {membership.role}
+                <span className="inline-flex items-center px-4 py-1.5 rounded-xl text-xs font-bold bg-surface-base text-brand-primary border border-brand-primary/20 shadow-sm">
+                  {membership.role.toUpperCase()}
                 </span>
               )}
             </div>
           </div>
           
-          <div className="bg-slate-100 px-4 py-2 rounded-lg border border-slate-200 hidden lg:block">
-            <p className="text-xs text-slate-500 font-medium">
-              You are viewing the dashboard as <span className="text-slate-900">{user.email}</span>
-            </p>
+          <div className="bg-surface-base/50 backdrop-blur-sm px-6 py-4 rounded-2xl border border-border-subtle hidden lg:block shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-surface-muted flex items-center justify-center text-text-dim text-sm font-bold border border-border-subtle">
+                {user.email?.[0].toUpperCase()}
+              </div>
+              <div>
+                <p className="text-xs text-text-dim font-bold uppercase tracking-wider">Authenticated As</p>
+                <p className="text-sm text-text-main font-semibold leading-none mt-0.5">{user.email}</p>
+              </div>
+            </div>
           </div>
-        </div>
+        </header>
 
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-2xl font-bold text-slate-900">Projects</h3>
-            <span className="text-sm text-slate-500">{currentWorkspace?.name || 'Loading...'}</span>
+        <section className="space-y-8">
+          <div className="flex items-center justify-between border-b border-border-subtle pb-4">
+            <div>
+              <h3 className="text-3xl font-black text-text-main tracking-tight">Project Overview</h3>
+              <p className="text-text-dim text-sm font-medium mt-1">Managing {currentWorkspace?.name || 'Workspace'}</p>
+            </div>
           </div>
 
           <Suspense fallback={<DashboardSkeleton />}>
             {currentWorkspaceId ? (
               <ProjectDataWrapper workspaceId={currentWorkspaceId} />
             ) : (
-              <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 shadow-sm">
-                <p className="text-slate-500">You don&apos;t have any workspaces yet.</p>
+              <div className="text-center py-24 bg-surface-base rounded-3xl border border-border-subtle shadow-premium animate-fade-in">
+                <div className="empty-illustration mb-6"></div>
+                <h4 className="text-xl font-bold text-text-main">No workspaces found</h4>
+                <p className="text-text-dim mt-2 max-w-md mx-auto">Create a workspace to start managing your projects and tasks effectively.</p>
               </div>
             )}
           </Suspense>
-        </div>
+        </section>
       </main>
 
-      <footer className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 border-t border-slate-200 mt-12">
-        <p className="text-center text-slate-400 text-xs tracking-widest uppercase">
-          Workspace Task Manager &copy; 2026
-        </p>
+      <footer className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 border-t border-border-subtle mt-20">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+          <p className="text-text-dim text-xs font-bold tracking-widest uppercase items-center flex gap-2">
+            <span className="w-1 h-1 bg-brand-primary rounded-full"></span>
+            Task Manager Assessment &copy; 2026
+          </p>
+          <div className="flex items-center gap-8 text-[10px] font-bold text-text-dim uppercase tracking-widest">
+            <span className="hover:text-brand-primary cursor-pointer transition-colors">Privacy</span>
+            <span className="hover:text-brand-primary cursor-pointer transition-colors">Terms</span>
+            <span className="hover:text-brand-primary cursor-pointer transition-colors">Support</span>
+          </div>
+        </div>
       </footer>
     </div>
   );

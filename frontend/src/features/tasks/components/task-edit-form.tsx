@@ -39,10 +39,10 @@ export function TaskEditForm({ task, members, onClose }: TaskEditFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="p-6 space-y-6">
-      <div className="space-y-4">
-        <div>
-          <label htmlFor="edit-title" className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+    <form onSubmit={handleSubmit} className="space-y-8 animate-fade-in">
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <label htmlFor="edit-title" className="block text-xs font-black text-text-dim uppercase tracking-widest ml-1">
             Task Title
           </label>
           <input
@@ -51,95 +51,109 @@ export function TaskEditForm({ task, members, onClose }: TaskEditFormProps) {
             required
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900"
+            className="w-full px-5 py-3.5 bg-surface-muted border border-border-subtle rounded-2xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary text-text-main font-bold transition-all outline-none"
+            placeholder="What needs to be done?"
           />
         </div>
 
-        <div>
-          <label htmlFor="edit-description" className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+        <div className="space-y-2">
+          <label htmlFor="edit-description" className="block text-xs font-black text-text-dim uppercase tracking-widest ml-1">
             Description
           </label>
           <textarea
             id="edit-description"
-            rows={4}
+            rows={5}
             value={formData.description || ''}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 resize-none"
-            placeholder="Add a more detailed description..."
+            className="w-full px-5 py-3.5 bg-surface-muted border border-border-subtle rounded-2xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary text-text-main font-medium transition-all outline-none resize-none leading-relaxed"
+            placeholder="Add some context or details..."
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="edit-status" className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label htmlFor="edit-status" className="block text-xs font-black text-text-dim uppercase tracking-widest ml-1">
               Status
             </label>
-            <select
-              id="edit-status"
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value as Database['public']['Enums']['task_status'] })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900"
-            >
-              <option value="todo">To Do</option>
-              <option value="in_progress">In Progress</option>
-              <option value="done">Done</option>
-            </select>
+            <div className="relative group">
+              <select
+                id="edit-status"
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as Database['public']['Enums']['task_status'] })}
+                className="appearance-none w-full px-5 py-3.5 bg-surface-muted border border-border-subtle rounded-2xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary text-text-main font-bold transition-all outline-none cursor-pointer"
+              >
+                <option value="todo">To Do</option>
+                <option value="in_progress">In Progress</option>
+                <option value="done">Done</option>
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-text-dim group-hover:text-brand-primary transition-colors">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="edit-assignee" className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+          <div className="space-y-2">
+            <label htmlFor="edit-assignee" className="block text-xs font-black text-text-dim uppercase tracking-widest ml-1">
               Assignee
             </label>
-            <select
-              id="edit-assignee"
-              value={formData.assignee_id || ''}
-              onChange={(e) => setFormData({ ...formData, assignee_id: e.target.value || null })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900"
-            >
-              <option value="">Unassigned</option>
-              {members.map((member) => (
-                <option key={member.user_id} value={member.user_id}>
-                  User {member.user_id.slice(0, 4)}
-                </option>
-              ))}
-            </select>
+            <div className="relative group">
+              <select
+                id="edit-assignee"
+                value={formData.assignee_id || ''}
+                onChange={(e) => setFormData({ ...formData, assignee_id: e.target.value || null })}
+                className="appearance-none w-full px-5 py-3.5 bg-surface-muted border border-border-subtle rounded-2xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary text-text-main font-bold transition-all outline-none cursor-pointer"
+              >
+                <option value="">Unassigned</option>
+                {members.map((member) => (
+                  <option key={member.user_id} value={member.user_id}>
+                    User {member.user_id.slice(0, 4).toUpperCase()}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-text-dim group-hover:text-brand-primary transition-colors">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div>
-          <label htmlFor="edit-due-date" className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+        <div className="space-y-2">
+          <label htmlFor="edit-due-date" className="block text-xs font-black text-text-dim uppercase tracking-widest ml-1">
             Due Date
           </label>
-          <input
-            id="edit-due-date"
-            type="date"
-            value={formData.due_date ? formData.due_date.split('T')[0] : ''}
-            onChange={(e) => setFormData({ ...formData, due_date: e.target.value || null })}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900"
-          />
+          <div className="relative group">
+            <input
+              id="edit-due-date"
+              type="date"
+              value={formData.due_date ? formData.due_date.split('T')[0] : ''}
+              onChange={(e) => setFormData({ ...formData, due_date: e.target.value || null })}
+              className="w-full px-5 py-3.5 bg-surface-muted border border-border-subtle rounded-2xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary text-text-main font-bold transition-all outline-none cursor-pointer"
+            />
+          </div>
         </div>
       </div>
 
       {error && (
-        <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg border border-red-100">
+        <div className="p-4 text-sm text-red-600 bg-red-50/50 rounded-2xl border border-red-100 flex items-center gap-3">
+          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           {error}
         </div>
       )}
 
-      <div className="flex gap-3 pt-4 border-t border-slate-100">
+      <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-border-subtle">
         <button
           type="button"
           onClick={onClose}
-          className="flex-1 px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+          className="flex-1 px-6 py-4 text-sm font-black text-text-dim bg-surface-muted hover:bg-border-subtle rounded-2xl transition-all uppercase tracking-widest"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={loading}
-          className="flex-1 px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50"
+          className="flex-1 px-6 py-4 text-sm font-black text-white bg-brand-primary hover:bg-brand-secondary shadow-lg shadow-brand-primary/20 rounded-2xl transition-all disabled:opacity-50 uppercase tracking-widest active:scale-[0.98]"
         >
-          {loading ? 'Saving...' : 'Save Changes'}
+          {loading ? 'Propagating...' : 'Save Changes'}
         </button>
       </div>
     </form>

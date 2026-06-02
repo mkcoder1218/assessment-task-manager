@@ -8,19 +8,20 @@ interface TaskStatusBadgeProps {
 
 export function TaskStatusBadge({ status }: TaskStatusBadgeProps) {
   const styles = {
-    todo: 'bg-slate-100 text-slate-700 border-slate-200',
-    in_progress: 'bg-blue-50 text-blue-700 border-blue-200',
-    done: 'bg-green-50 text-green-700 border-green-200',
+    todo: 'bg-surface-muted text-text-dim border-border-subtle',
+    in_progress: 'bg-blue-50 text-blue-600 border-blue-100',
+    done: 'bg-green-50 text-green-600 border-green-100',
   };
 
   const labels = {
-    todo: 'To Do',
-    in_progress: 'In Progress',
-    done: 'Done',
+    todo: 'TO DO',
+    in_progress: 'IN PROGRESS',
+    done: 'DONE',
   };
 
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border ${styles[status]}`}>
+    <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black tracking-widest border-2 ${styles[status]}`}>
+      <span className={`w-1 h-1 rounded-full mr-1.5 ${status === 'todo' ? 'bg-text-dim' : status === 'in_progress' ? 'bg-blue-600' : 'bg-green-600'}`}></span>
       {labels[status]}
     </span>
   );

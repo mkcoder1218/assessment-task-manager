@@ -38,49 +38,60 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
   const members = await getAllWorkspaceMembers(project.workspace_id);
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+    <div className="min-h-screen bg-background">
+      <nav className="glass border-b border-border-subtle sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center gap-4">
+          <div className="flex justify-between h-18 items-center">
+            <div className="flex items-center gap-6">
               <Link 
                 href="/dashboard" 
-                className="text-slate-400 hover:text-slate-600 transition-colors p-1"
+                className="group flex items-center justify-center w-10 h-10 rounded-xl bg-surface-muted border border-border-subtle text-text-dim hover:text-brand-primary hover:border-brand-primary/30 transition-all"
                 aria-label="Back to Dashboard"
               >
-                ←
+                <svg className="w-5 h-5 translate-x-0 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                </svg>
               </Link>
-              <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
+              <div className="h-6 w-px bg-border-subtle hidden sm:block"></div>
+              <h1 className="text-xl font-black text-text-main tracking-tight line-clamp-1">
                 {project.name}
               </h1>
             </div>
-            <div className="flex items-center space-x-6">
-              <span className="text-sm font-medium text-slate-500 hidden sm:inline">{user.email}</span>
+            <div className="flex items-center space-x-4">
+              <div className="hidden md:flex flex-col items-end">
+                <span className="text-xs font-bold text-text-dim uppercase tracking-widest">{currentWorkspace?.name}</span>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary text-xs font-bold border border-brand-primary/20">
+                {user.email?.[0].toUpperCase()}
+              </div>
             </div>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-6">
-            <div>
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">
-                <span>{currentWorkspace?.name || 'Workspace'}</span>
-                <span>/</span>
-                <span className="text-blue-600">Tasks</span>
+      <main className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8 animate-fade-in">
+        <div className="mb-12">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-10">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-text-dim uppercase tracking-widest">
+                <span className="hover:text-brand-primary cursor-pointer transition-colors px-2 py-0.5 rounded-md bg-surface-muted">{currentWorkspace?.name || 'Workspace'}</span>
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                <span className="text-brand-primary font-black px-2 py-0.5 rounded-md bg-brand-primary/5">Project Tasks</span>
               </div>
-              <h2 className="text-2xl font-bold text-slate-900">Task Overview</h2>
+              <h2 className="text-4xl font-black text-text-main tracking-tight">Focus on what matters</h2>
+              <p className="text-text-dim font-medium max-w-xl">Manage and track all tasks for <span className="text-text-main font-bold">&quot;{project.name}&quot;</span>. Filter by status or assignee to stay organized.</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center shrink-0">
               <OverdueTaskPanel projectId={projectId} />
             </div>
           </div>
 
-          <TaskFilters members={members} />
+          <div className="bg-surface-base p-2 rounded-2xl border border-border-subtle shadow-sm mb-12">
+            <TaskFilters members={members} />
+          </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="relative">
           <Suspense key={`${status}-${assignee}`} fallback={<TaskListSkeleton />}>
             <TaskDataWrapper projectId={projectId} status={status} assignee={assignee} members={members} />
           </Suspense>
@@ -123,9 +134,11 @@ async function TaskDataWrapper({
 
 function TaskListSkeleton() {
   return (
-    <div className="animate-pulse space-y-3">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <div key={i} className="h-16 bg-slate-200 rounded-xl border border-transparent shadow-sm"></div>
+    <div className="grid grid-cols-1 gap-4">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div key={i} className="h-24 bg-surface-base rounded-2xl border border-border-subtle shadow-sm relative overflow-hidden">
+          <div className="absolute inset-0 skeleton-shimmer"></div>
+        </div>
       ))}
     </div>
   );
