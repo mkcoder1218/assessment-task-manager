@@ -2,9 +2,10 @@
   "name": "assessment-task-manager",
   "private": true,
   "scripts": {
-    "build": "npm run build --prefix frontend",
-    "lint": "npm run lint --prefix frontend",
-    "start": "npm run start --prefix frontend"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

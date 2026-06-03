@@ -6,6 +6,7 @@ frontend/node_modules
 frontend/.next
 frontend/.env
 frontend/.env.local
+frontend
 backend/supabase/.temp
 supabase/.temp
 supabase/.env
