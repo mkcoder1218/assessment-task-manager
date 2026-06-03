@@ -11,7 +11,7 @@ export type RealtimeTask = Task;
  * Custom hook to synchronize project tasks via Supabase Realtime Channels.
  * Returns the current live list of tasks and handles subscription cleanup.
  */
-export function useTaskRealtime(projectId: string, initialTasks: Task[]) {
+export function useTaskRealtime(projectId: string, initialTasks: Task[]): Task[] {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [prevInitialTasks, setPrevInitialTasks] = useState<Task[]>(initialTasks);
   const supabase = createClient();
@@ -49,7 +49,7 @@ export function useTaskRealtime(projectId: string, initialTasks: Task[]) {
                 );
 
               case 'DELETE':
-                return nextTasks.filter((t) => t.id === (payload.old as Task).id);
+                return nextTasks.filter((t) => t.id !== (payload.old as Task).id);
 
               default:
                 return nextTasks;

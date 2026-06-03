@@ -133,7 +133,45 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_workspace: {
+        Args: {
+          workspace_name: string
+        }
+        Returns: Database["public"]["Tables"]["workspaces"]["Row"]
+      }
+      can_assign_task_to_project: {
+        Args: {
+          target_project_id: string
+          target_assignee_id: string | null
+        }
+        Returns: boolean
+      }
+      add_workspace_member_by_email: {
+        Args: {
+          target_workspace_id: string
+          member_email: string
+        }
+        Returns: Database["public"]["Tables"]["workspace_members"]["Row"]
+      }
+      remove_workspace_member: {
+        Args: {
+          target_workspace_id: string
+          target_user_id: string
+        }
+        Returns: undefined
+      }
+      get_user_workspace_ids: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          workspace_id: string
+        }[]
+      }
+      is_workspace_owner: {
+        Args: {
+          target_workspace_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       task_status: "todo" | "in_progress" | "done"

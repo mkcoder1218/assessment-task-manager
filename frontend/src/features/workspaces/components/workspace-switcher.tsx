@@ -19,26 +19,26 @@ export function WorkspaceSwitcher({ workspaces, currentWorkspaceId }: WorkspaceS
   }
 
   return (
-    <div className="relative inline-block text-left w-full sm:w-80 group">
-      <label htmlFor="workspace-select" className="block text-[10px] font-black text-text-dim uppercase tracking-[0.2em] mb-2 px-1">
-        Your Organization
+    <div className="group relative w-full">
+      <label htmlFor="workspace-select" className="mb-2 block text-xs font-bold text-text-dim">
+        Active workspace
       </label>
       <div className="relative">
         <select
           id="workspace-select"
           value={currentWorkspaceId || ''}
           onChange={(e) => handleSwitch(e.target.value)}
-          className="appearance-none block w-full pl-5 pr-12 py-3.5 text-base font-bold bg-surface-base border-2 border-border-subtle focus:outline-none focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary sm:text-sm rounded-2xl text-text-main shadow-sm transition-all cursor-pointer hover:border-brand-primary/50"
+          className="block h-11 w-full cursor-pointer appearance-none rounded-lg border border-border-subtle bg-surface-base px-3 pr-10 text-sm font-semibold text-text-main outline-none transition hover:border-brand-primary/50 focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10"
         >
-          <option value="" disabled>Select a workspace</option>
+          <option value="" disabled>No workspace selected</option>
           {workspaces.map((ws) => (
             <option key={ws.id} value={ws.id}>
               {ws.name}
             </option>
           ))}
         </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-text-dim group-hover:text-brand-primary transition-colors">
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-text-dim transition-colors group-hover:text-brand-primary">
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
           </svg>
         </div>

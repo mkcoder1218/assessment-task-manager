@@ -1,10 +1,14 @@
 import { createClient } from '@/lib/supabase/client';
 import { Task } from './task-service';
 
+export type OverdueTask = Task & {
+  assignee_name: string;
+};
+
 /**
  * Invokes the overdue-tasks Edge Function for a specific project.
  */
-export async function getOverdueTasks(projectId: string): Promise<Task[]> {
+export async function getOverdueTasks(projectId: string): Promise<OverdueTask[]> {
   const supabase = createClient();
   
   const { data, error } = await supabase.functions.invoke('overdue-tasks', {
@@ -16,5 +20,5 @@ export async function getOverdueTasks(projectId: string): Promise<Task[]> {
     throw new Error(error.message || 'Failed to fetch overdue tasks');
   }
 
-  return data as Task[];
+  return data as OverdueTask[];
 }

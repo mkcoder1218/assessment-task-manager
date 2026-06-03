@@ -1,6 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { Database } from '@/lib/supabase/database.types';
+
+type ProjectInsert = Database['public']['Tables']['projects']['Insert'];
 
 /**
  * DEVELOPMENT ONLY: RLS Verification API
@@ -48,7 +50,7 @@ export async function GET() {
     .insert({
       workspace_id: MARKETING_WORKSPACE_ID,
       name: 'Hack Project',
-    } as any) // bypass inference for RLS test
+    } satisfies ProjectInsert)
     .select()
     .single();
 

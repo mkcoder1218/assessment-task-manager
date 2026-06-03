@@ -16,8 +16,8 @@ export async function getWorkspaces() {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching workspaces:', error);
-    throw new Error('Failed to fetch workspaces');
+    console.error('Error fetching workspaces:', error.message, error.code, error.details);
+    throw new Error(`Failed to fetch workspaces: ${error.message}`);
   }
 
   return data as Workspace[];
@@ -54,7 +54,9 @@ export async function getAllWorkspaceMembers(workspaceId: string) {
   const { data, error } = await supabase
     .from('workspace_members')
     .select('*')
-    .eq('workspace_id', workspaceId);
+    .eq('workspace_id', workspaceId)
+    .order('role', { ascending: false })
+    .order('user_id', { ascending: true });
 
   if (error) {
     console.error('Error fetching workspace members:', error);

@@ -55,7 +55,145 @@ CREATE INDEX idx_tasks_assignee_id ON tasks(assignee_id);
 CREATE INDEX idx_tasks_status ON tasks(status);
 
 -- ==========================================
--- 4. RLS POLICIES
+-- 4. FUNCTIONS (RLS Helpers)
+-- ==========================================
+
+-- Break recursion in RLS policies by using plpgsql to avoid inlining 
+CREATE OR REPLACE FUNCTION get_user_workspace_ids()
+RETURNS TABLE (workspace_id UUID)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT wm.workspace_id
+  FROM workspace_members wm
+  WHERE wm.user_id = auth.uid();
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION is_workspace_owner(target_workspace_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1
+    FROM workspace_members wm
+    WHERE wm.workspace_id = target_workspace_id
+      AND wm.user_id = auth.uid()
+      AND wm.role = 'owner'
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION can_assign_task_to_project(target_project_id UUID, target_assignee_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF target_assignee_id IS NULL THEN
+    RETURN TRUE;
+  END IF;
+
+  RETURN EXISTS (
+    SELECT 1
+    FROM projects p
+    JOIN workspace_members wm ON wm.workspace_id = p.workspace_id
+    WHERE p.id = target_project_id
+      AND wm.user_id = target_assignee_id
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION add_workspace_member_by_email(target_workspace_id UUID, member_email TEXT)
+RETURNS workspace_members
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+DECLARE
+  target_user_id UUID;
+  inserted_member workspace_members;
+BEGIN
+  IF NOT is_workspace_owner(target_workspace_id) THEN
+    RAISE EXCEPTION 'Only workspace owners can add members';
+  END IF;
+
+  IF length(trim(member_email)) = 0 THEN
+    RAISE EXCEPTION 'Email is required';
+  END IF;
+
+  SELECT u.id
+  INTO target_user_id
+  FROM auth.users u
+  WHERE lower(u.email) = lower(trim(member_email))
+  LIMIT 1;
+
+  IF target_user_id IS NULL THEN
+    RAISE EXCEPTION 'No registered user found for that email';
+  END IF;
+
+  INSERT INTO workspace_members (workspace_id, user_id, role)
+  VALUES (target_workspace_id, target_user_id, 'member')
+  RETURNING * INTO inserted_member;
+
+  RETURN inserted_member;
+EXCEPTION
+  WHEN unique_violation THEN
+    RAISE EXCEPTION 'User is already a member of this workspace';
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION remove_workspace_member(target_workspace_id UUID, target_user_id UUID)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  target_role workspace_role;
+  owner_count INTEGER;
+BEGIN
+  IF NOT is_workspace_owner(target_workspace_id) THEN
+    RAISE EXCEPTION 'Only workspace owners can remove members';
+  END IF;
+
+  SELECT role
+  INTO target_role
+  FROM workspace_members
+  WHERE workspace_id = target_workspace_id
+    AND user_id = target_user_id;
+
+  IF target_role IS NULL THEN
+    RAISE EXCEPTION 'User is not a member of this workspace';
+  END IF;
+
+  IF target_role = 'owner' THEN
+    SELECT count(*)
+    INTO owner_count
+    FROM workspace_members
+    WHERE workspace_id = target_workspace_id
+      AND role = 'owner';
+
+    IF owner_count <= 1 THEN
+      RAISE EXCEPTION 'Cannot remove the last workspace owner';
+    END IF;
+  END IF;
+
+  DELETE FROM workspace_members
+  WHERE workspace_id = target_workspace_id
+    AND user_id = target_user_id;
+END;
+$$;
+
+-- ==========================================
+-- 5. RLS POLICIES
 -- ==========================================
 
 -- Enable RLS
@@ -63,6 +201,17 @@ ALTER TABLE workspaces ENABLE ROW LEVEL SECURITY;
 ALTER TABLE workspace_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+
+-- Allow Supabase API roles to access tables; RLS policies below control rows.
+GRANT SELECT, INSERT, UPDATE, DELETE ON workspaces TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON workspace_members TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON projects TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON tasks TO authenticated;
+GRANT EXECUTE ON FUNCTION get_user_workspace_ids() TO authenticated;
+GRANT EXECUTE ON FUNCTION is_workspace_owner(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION can_assign_task_to_project(UUID, UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION add_workspace_member_by_email(UUID, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION remove_workspace_member(UUID, UUID) TO authenticated;
 
 -- ------------------------------------------
 -- WORKSPACES POLICIES
@@ -72,11 +221,7 @@ ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view workspaces they belong to" 
 ON workspaces FOR SELECT 
 USING (
-    EXISTS (
-        SELECT 1 FROM workspace_members 
-        WHERE workspace_members.workspace_id = id 
-        AND workspace_members.user_id = auth.uid()
-    )
+    id IN (SELECT get_user_workspace_ids())
 );
 
 -- INSERT: Authenticated users can create workspaces
@@ -88,24 +233,14 @@ WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "Owners can update their workspaces" 
 ON workspaces FOR UPDATE 
 USING (
-    EXISTS (
-        SELECT 1 FROM workspace_members 
-        WHERE workspace_members.workspace_id = id 
-        AND workspace_members.user_id = auth.uid() 
-        AND workspace_members.role = 'owner'
-    )
+    is_workspace_owner(id)
 );
 
 -- DELETE: Only owners can delete workspaces
 CREATE POLICY "Owners can delete their workspaces" 
 ON workspaces FOR DELETE 
 USING (
-    EXISTS (
-        SELECT 1 FROM workspace_members 
-        WHERE workspace_members.workspace_id = id 
-        AND workspace_members.user_id = auth.uid() 
-        AND workspace_members.role = 'owner'
-    )
+    is_workspace_owner(id)
 );
 
 -- ------------------------------------------
@@ -116,47 +251,28 @@ USING (
 CREATE POLICY "Users can view members of their workspaces" 
 ON workspace_members FOR SELECT 
 USING (
-    workspace_id IN (
-        SELECT wm.workspace_id FROM workspace_members wm 
-        WHERE wm.user_id = auth.uid()
-    )
+    user_id = auth.uid() OR workspace_id IN (SELECT get_user_workspace_ids())
 );
 
 -- INSERT: Only owners can add members
 CREATE POLICY "Owners can add members" 
 ON workspace_members FOR INSERT 
 WITH CHECK (
-    EXISTS (
-        SELECT 1 FROM workspace_members 
-        WHERE workspace_members.workspace_id = workspace_id 
-        AND workspace_members.user_id = auth.uid() 
-        AND workspace_members.role = 'owner'
-    )
+    is_workspace_owner(workspace_id)
 );
 
 -- UPDATE: Only owners can change roles
 CREATE POLICY "Owners can update member roles" 
 ON workspace_members FOR UPDATE 
 USING (
-    EXISTS (
-        SELECT 1 FROM workspace_members 
-        WHERE workspace_members.workspace_id = workspace_id 
-        AND workspace_members.user_id = auth.uid() 
-        AND workspace_members.role = 'owner'
-    )
+    is_workspace_owner(workspace_id)
 );
 
 -- DELETE: Owners can remove members, members can leave (delete themselves)
 CREATE POLICY "Owners can remove members or users can leave" 
 ON workspace_members FOR DELETE 
 USING (
-    (auth.uid() = user_id) OR 
-    EXISTS (
-        SELECT 1 FROM workspace_members 
-        WHERE workspace_members.workspace_id = workspace_id 
-        AND workspace_members.user_id = auth.uid() 
-        AND workspace_members.role = 'owner'
-    )
+    (auth.uid() = user_id) OR is_workspace_owner(workspace_id)
 );
 
 -- ------------------------------------------
@@ -180,7 +296,7 @@ ON projects FOR INSERT
 WITH CHECK (
     EXISTS (
         SELECT 1 FROM workspace_members 
-        WHERE workspace_members.workspace_id = workspace_id 
+        WHERE workspace_members.workspace_id = projects.workspace_id 
         AND workspace_members.user_id = auth.uid()
     )
 );
@@ -231,9 +347,10 @@ WITH CHECK (
     EXISTS (
         SELECT 1 FROM projects p
         JOIN workspace_members wm ON wm.workspace_id = p.workspace_id
-        WHERE p.id = project_id 
+        WHERE p.id = tasks.project_id 
         AND wm.user_id = auth.uid()
     )
+    AND can_assign_task_to_project(tasks.project_id, tasks.assignee_id)
 );
 
 -- UPDATE: Members can update tasks
@@ -246,6 +363,15 @@ USING (
         WHERE p.id = tasks.project_id 
         AND wm.user_id = auth.uid()
     )
+)
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM projects p
+        JOIN workspace_members wm ON wm.workspace_id = p.workspace_id
+        WHERE p.id = tasks.project_id
+        AND wm.user_id = auth.uid()
+    )
+    AND can_assign_task_to_project(tasks.project_id, tasks.assignee_id)
 );
 
 -- DELETE: Members can delete tasks

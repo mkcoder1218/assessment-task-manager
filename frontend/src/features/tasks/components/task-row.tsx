@@ -3,9 +3,10 @@ import { TaskStatusSelect } from './task-status-select';
 
 interface TaskRowProps {
   task: Task;
+  assigneeLabel?: string;
 }
 
-export function TaskRow({ task }: TaskRowProps) {
+export function TaskRow({ task, assigneeLabel }: TaskRowProps) {
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
   const formattedDate = task.due_date ? new Date(task.due_date).toLocaleDateString() : null;
 
@@ -37,7 +38,7 @@ export function TaskRow({ task }: TaskRowProps) {
             </div>
             <div className="flex flex-col">
               <span className="text-[9px] text-text-dim uppercase font-black tracking-widest leading-none mb-1">Assignee</span>
-              <span className="text-xs font-bold text-text-main leading-none">U-{task.assignee_id.slice(0, 4).toUpperCase()}</span>
+              <span className="text-xs font-bold text-text-main leading-none">{assigneeLabel || `U-${task.assignee_id.slice(0, 4).toUpperCase()}`}</span>
             </div>
           </div>
         )}

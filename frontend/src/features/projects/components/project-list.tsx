@@ -1,20 +1,24 @@
 import { Project, getProjectTaskCounts } from '../services/project-service';
+import { CreateProjectForm } from './create-project-form';
 import { ProjectCard } from './project-card';
 
 interface ProjectListProps {
   projects: Project[];
+  workspaceId: string;
 }
 
-export async function ProjectList({ projects }: ProjectListProps) {
+export async function ProjectList({ projects, workspaceId }: ProjectListProps) {
   if (projects.length === 0) {
     return (
-      <div className="text-center py-24 bg-surface-base rounded-3xl border-2 border-dashed border-border-subtle animate-fade-in shadow-sm">
-        <div className="empty-illustration mb-8"></div>
-        <h3 className="text-2xl font-black text-text-main tracking-tight">No projects yet</h3>
-        <p className="text-text-dim mt-2 max-w-sm mx-auto font-medium">Get started by creating your first project to organize your workspace effectively.</p>
-        <button className="mt-8 inline-flex items-center px-8 py-3.5 border border-transparent text-sm font-bold rounded-2xl shadow-lg shadow-brand-primary/20 text-white bg-brand-primary hover:bg-brand-secondary transform hover:scale-[1.02] active:scale-[0.98] transition-all">
-          Create Your First Project
-        </button>
+      <div className="rounded-xl border border-dashed border-border-subtle bg-surface-base px-5 py-14 text-center shadow-sm">
+        <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-lg bg-surface-muted text-text-dim">
+          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5h6m-6 4h6m-7 4h8M5 3h14a1 1 0 011 1v16a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z" />
+          </svg>
+        </div>
+        <h3 className="text-xl font-black tracking-tight text-text-main">No projects yet</h3>
+        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-text-dim">Create a project to start grouping tasks in this workspace.</p>
+        <CreateProjectForm workspaceId={workspaceId} />
       </div>
     );
   }
@@ -28,7 +32,7 @@ export async function ProjectList({ projects }: ProjectListProps) {
   );
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {projectsWithCounts.map(({ project, counts }) => (
         <ProjectCard key={project.id} project={project} taskCounts={counts} />
       ))}

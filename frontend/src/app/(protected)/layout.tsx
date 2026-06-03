@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 
 /**
  * Shared layout for all protected routes.
- * Ensures the user is authenticated before rendering any content.
+ * Ensures the user is authenticated before rendering protected content.
  */
 export default async function ProtectedLayout({
   children,

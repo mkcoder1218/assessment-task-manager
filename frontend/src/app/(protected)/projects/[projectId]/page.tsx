@@ -8,6 +8,7 @@ import { getTasks } from '@/features/tasks/services/task-service';
 import { TaskList } from '@/features/tasks/components/task-list';
 import { TaskFilters } from '@/features/tasks/components/task-filters';
 import { OverdueTaskPanel } from '@/features/tasks/components/overdue-task-panel';
+import { CreateTaskForm } from '@/features/tasks/components/create-task-form';
 
 interface ProjectPageProps {
   params: Promise<{ projectId: string }>;
@@ -31,6 +32,10 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
 
   const workspaces = await getWorkspaces();
   const currentWorkspace = workspaces.find(ws => ws.id === project.workspace_id);
+
+  if (!currentWorkspace) {
+    return notFound();
+  }
   
   // Fetch members for the filter dropdown
   const [members, taskCounts] = await Promise.all([
@@ -40,68 +45,79 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="glass border-b border-border-subtle sticky top-0 z-50 shadow-sm">
+      <nav className="sticky top-0 z-50 border-b border-border-subtle bg-surface-base/90 shadow-sm backdrop-blur">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-18 items-center">
-            <div className="flex items-center gap-6">
+          <div className="flex min-h-16 items-center justify-between gap-4 py-3">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
               <Link 
-                href="/dashboard" 
-                className="group flex items-center justify-center w-10 h-10 rounded-xl bg-surface-muted border border-border-subtle text-text-dim hover:text-brand-primary hover:border-brand-primary/30 transition-all"
-                aria-label="Back to Dashboard"
+                href={`/dashboard?workspaceId=${project.workspace_id}`} 
+                className="group flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-border-subtle bg-surface-muted px-3 text-sm font-bold text-text-dim transition hover:border-brand-primary/30 hover:text-brand-primary"
+                aria-label="Back to workspace projects"
               >
-                <svg className="w-5 h-5 translate-x-0 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
                 </svg>
+                <span className="hidden sm:inline">Projects</span>
               </Link>
-              <div className="h-6 w-px bg-border-subtle hidden sm:block"></div>
-              <h1 className="text-xl font-black text-text-main tracking-tight line-clamp-1">
-                {project.name}
-              </h1>
+              <div className="min-w-0">
+                <p className="truncate text-xs font-bold text-text-dim">{currentWorkspace.name}</p>
+                <h1 className="truncate text-lg font-black tracking-tight text-text-main sm:text-xl">
+                  {project.name}
+                </h1>
+              </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="hidden md:flex flex-col items-end">
-                <span className="text-xs font-bold text-text-dim uppercase tracking-widest">{currentWorkspace?.name}</span>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary text-xs font-bold border border-brand-primary/20">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-brand-primary/20 bg-brand-primary/10 text-xs font-bold text-brand-primary">
                 {user.email?.[0].toUpperCase()}
-              </div>
             </div>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8 animate-fade-in">
-        <div className="mb-12">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-10">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-[10px] font-bold text-text-dim uppercase tracking-widest">
-                <span className="hover:text-brand-primary cursor-pointer transition-colors px-2 py-0.5 rounded-md bg-surface-muted">{currentWorkspace?.name || 'Workspace'}</span>
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                <span className="text-brand-primary font-black px-2 py-0.5 rounded-md bg-brand-primary/5">Project Tasks</span>
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <div className="mb-6 rounded-xl border border-border-subtle bg-surface-base p-5 shadow-sm">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+              <div className="min-w-0 space-y-3">
+                <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-text-dim">
+                  <Link href={`/dashboard?workspaceId=${project.workspace_id}`} className="rounded-md bg-surface-muted px-2 py-1 transition hover:text-brand-primary">
+                    {currentWorkspace.name}
+                  </Link>
+                  <span aria-hidden="true">/</span>
+                  <span className="text-brand-primary">{project.name}</span>
+                </div>
+                <h2 className="text-2xl font-black tracking-tight text-text-main sm:text-3xl">
+                  {project.name}
+                </h2>
+                <p className="text-sm leading-6 text-text-dim">
+                  Tasks are scoped to this project, and assignees come from {currentWorkspace.name}.
+                </p>
               </div>
-              <h2 className="text-4xl font-black text-text-main tracking-tight">Focus on what matters</h2>
-              <div className="flex flex-wrap items-center gap-6 pt-2">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-text-dim/40 rounded-full"></span>
-                  <span className="text-xs font-bold text-text-dim uppercase tracking-widest">{taskCounts.todo} TODO</span>
+              <div className="grid grid-cols-3 gap-2 sm:min-w-80">
+                <div className="rounded-lg border border-border-subtle bg-surface-muted p-3 text-center">
+                  <p className="text-lg font-black text-text-main">{taskCounts.todo}</p>
+                  <p className="text-xs font-semibold text-text-dim">Todo</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                  <span className="text-xs font-bold text-text-dim uppercase tracking-widest">{taskCounts.inProgress} DOING</span>
+                <div className="rounded-lg border border-blue-100 bg-blue-50 p-3 text-center">
+                  <p className="text-lg font-black text-blue-700">{taskCounts.inProgress}</p>
+                  <p className="text-xs font-semibold text-blue-500">Doing</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  <span className="text-xs font-bold text-text-dim uppercase tracking-widest">{taskCounts.done} DONE</span>
+                <div className="rounded-lg border border-green-100 bg-green-50 p-3 text-center">
+                  <p className="text-lg font-black text-green-700">{taskCounts.done}</p>
+                  <p className="text-xs font-semibold text-green-600">Done</p>
                 </div>
               </div>
-            </div>
-            <div className="flex items-center shrink-0">
-              <OverdueTaskPanel projectId={projectId} />
             </div>
           </div>
 
-          <div className="bg-surface-base p-2 rounded-2xl border border-border-subtle shadow-sm mb-12">
+          <div className="mb-4 flex justify-end">
+            <OverdueTaskPanel projectId={projectId} />
+          </div>
+
+          <div className="mb-4 rounded-xl border border-border-subtle bg-surface-base p-2 shadow-sm">
             <TaskFilters members={members} />
+          </div>
+          <div className="mb-8">
+            <CreateTaskForm projectId={projectId} members={members} />
           </div>
         </div>
 

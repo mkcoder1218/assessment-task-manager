@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { getOverdueTasks } from '../services/overdue-task-service';
-import { Task } from '../services/task-service';
+import { getOverdueTasks, OverdueTask } from '../services/overdue-task-service';
 import { TaskRow } from './task-row';
 
 interface OverdueTaskPanelProps {
@@ -10,7 +9,7 @@ interface OverdueTaskPanelProps {
 }
 
 export function OverdueTaskPanel({ projectId }: OverdueTaskPanelProps) {
-  const [tasks, setTasks] = useState<Task[] | null>(null);
+  const [tasks, setTasks] = useState<OverdueTask[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -107,7 +106,7 @@ export function OverdueTaskPanel({ projectId }: OverdueTaskPanelProps) {
             <div className="grid grid-cols-1 gap-4">
               {tasks.map((task) => (
                 <div key={task.id} className="transform hover:scale-[1.01] transition-transform">
-                  <TaskRow task={task} />
+                  <TaskRow task={task} assigneeLabel={task.assignee_name} />
                 </div>
               ))}
             </div>

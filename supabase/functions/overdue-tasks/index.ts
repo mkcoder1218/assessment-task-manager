@@ -37,8 +37,7 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     )
 
-    // Fetch overdue tasks using RLS-enabled client
-    // due_date < now, status != done
+    // Fetch overdue tasks using the caller's JWT so table RLS still applies.
     const now = new Date().toISOString()
     const { data: tasks, error } = await supabaseClient
       .from('tasks')
@@ -54,18 +53,22 @@ serve(async (req) => {
       )
     }
 
-    // Since we don't have a profiles table and auth.users is restricted, 
-    // we return the tasks as is. The frontend will format the assignee name.
-    // If the user wants specific names, they would need a publicly readable profiles table.
+    const tasksWithAssigneeName = (tasks ?? []).map((task) => ({
+      ...task,
+      assignee_name: task.assignee_id
+        ? `User ${task.assignee_id.slice(0, 4).toUpperCase()}`
+        : 'Unassigned',
+    }))
     
     return new Response(
-      JSON.stringify(tasks),
+      JSON.stringify(tasksWithAssigneeName),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unexpected request error'
     return new Response(
-      JSON.stringify({ error: err.message }),
+      JSON.stringify({ error: message }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

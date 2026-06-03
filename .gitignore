@@ -7,3 +7,6 @@ frontend/.next
 frontend/.env
 frontend/.env.local
 backend/supabase/.temp
+supabase/.temp
+supabase/.env
+supabase/.env.local
