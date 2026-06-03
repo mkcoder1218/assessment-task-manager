@@ -4,14 +4,15 @@ Multi-workspace task management app built with Next.js App Router, TypeScript, S
 
 ## Submission Details
 
-- Exact start time: June 2, 2026, 14:23:38 EAT (UTC+03:00)
-- Exact end time: June 2, 2026, 16:54:49 EAT (UTC+03:00)
+- Exact start time: June 2, 2026, 13:00 EAT (UTC+03:00)
+- Exact end time: June 3, 2026, 11:00 EAT (UTC+03:00)
 - GitHub repository: add the public repository URL before sending the submission email
-- Vercel deployment: add the live Vercel URL before sending the submission email
+- Vercel deployment: https://assessment-task-manager-i26j.vercel.app/sign-in
 
 ## Complete And Working
 
 - Supabase Auth sign up, sign in, and sign out.
+- Supabase email confirmation is disabled for this assessment deployment so reviewers can sign up and sign in immediately without waiting for confirmation email delivery.
 - Protected App Router dashboard and project routes using the Supabase SSR client pattern.
 - Multi-tenant schema with `workspaces`, `workspace_members`, `projects`, and `tasks`.
 - Row Level Security policies for `SELECT`, `INSERT`, `UPDATE`, and `DELETE` on all required tables.
@@ -41,13 +42,11 @@ Multi-workspace task management app built with Next.js App Router, TypeScript, S
 
 ```bash
 npm install
-cd frontend
-npm install
 cp .env.example .env.local
 npm run dev
 ```
 
-Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `frontend/.env.local` before starting the app.
+Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local` before starting the app.
 
 ## Database And Edge Function
 
@@ -64,7 +63,6 @@ npx supabase functions deploy overdue-tasks
 ## Verification
 
 ```bash
-cd frontend
 npm run lint
 npm run build
 ```
